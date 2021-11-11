@@ -1,0 +1,21 @@
+{
+  "port": 3000,
+  "device": "cpu",
+  "website": {
+    "name": "Demo",
+    "title": "Title",
+    "description": "Change this description by modify config.json.",
+    "source_license": "MIT",
+    "license_link": "http://opensource.org/licenses/mit-license.php",
+    "source_link": "https://github.com/songquanpeng/pytorch-deployment",
+    "help_link": "https://github.com/songquanpeng/pytorch-deployment",
+    "owner_name": "JustSong",
+    "owner_link": "https://github.com/songquanpeng"
+  },
+  "models": {
+    "starganv2_afhq": {
+      "name": "Pretrained StarGANv2 model on AFHQ",
+      "description": "This model can be used to translate animal faces."
+    }
+  }
+}
