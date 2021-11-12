@@ -45,6 +45,8 @@ def model_inference():
         model_name = request.form['model']
         if model_name == 'starganv2_afhq':
             res = StarGANv2.controller(request)
+        elif model_name == 'pt_cs_translator':
+            res = StarGANv2.controller(request)
         else:
             res.message = f"no such model: {model_name}"
     except Exception as e:
