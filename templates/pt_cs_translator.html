@@ -1,103 +1,355 @@
 {% include './partials/header.html' %}
 
+<script type="text/javascript" src="{{ url_for('static', filename='main.js')}}"></script>
+
 <div class="normal-container">
     {% include './partials/message.html' %}
+    <script type="text/javascript">
+        function display(id){
+            var target = document.getElementById(id);
+            if(target.style.display=="none"){
+                target.style.display="";
+            }else{
+                target.style.display="none";
+            }
+        }
+    </script>
+    <nav class="level">
+        <div class="level-item has-text-centered">
+          <div>
+            <p class="heading">浏览次数</p>
+            <p class="title">3,456</p>
+          </div>
+        </div>
+        <div class="level-item has-text-centered">
+          <div>
+            <p class="heading">已经有这么多人贡献了他们的翻译</p>
+            <p class="title">123</p>
+          </div>
+        </div>
+      </nav>
     <div>
         <div class="page-card-title" style="margin-bottom: 16px">{{ title }}</div>
-        <article class="message">
+        <article class="message is-primary">
             <div class="message-body">
-                {{ description }}
+                {{ description }} 
+                <a onclick="display('invisible_lb')"> <font color="blue"> [Eng] </font> </a>
+            </div>
+            <div id="invisible_lb" class="message-body" style='display:none'>
+                <font> {{description_en}} </font>
             </div>
         </article>
+
         <article id="errorMessage" class="message is-danger" style="display: none">
-          <div class="message-body">
-
-          </div>
-        </article>
-        <div class="content-tab">
-            <div class="columns">
-                <div class="column">
-                    <div class="field">
-                        <label class="label">录音</label>
-                        <div class="control">
-                            <div class="select">
-                                <select id="y" name="y">
-                                    <option value="0">Cat</option>
-                                    <option value="1">Dog</option>
-                                    <option value="2">Wild</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="column">
-                    <div class="field">
-                        <label class="label">Random Seed</label>
-                        <div class="control">
-                            <input class="input" id="seed" value="0" type="text" placeholder="Just type in anything">
-                        </div>
-                    </div>
-                </div>
-                <div class="column">
-                    <div class="field">
-                        <label class="label">Mode</label>
-                        <div class="control">
-                            <label class="radio">
-                                <input type="radio" name="mode" value="reference" id="refRadio" checked>
-                                Reference mode
-                            </label>
-                            <label class="radio">
-                                <input type="radio" name="mode" value="latent">
-                                Latent Mode
-                            </label>
-
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="columns is-desktop">
-                <div class="column">
-                    <div class="field">
-                        <label class="label">Source Image</label>
-                        <div class="control">
-                            <figure class="image is-256x256" style="margin-bottom: 8px">
-                                <img src="https://cdn.jsdelivr.net/gh/justsong-lab/images/misc/placeholder.png" alt="src" id="showSrcImage" width="256" height="256">
-                            </figure>
-                            <input id="srcImage" name="src_image" type="file" accept="image/*" style="display: none">
-                            <input type="submit" class="button is-light" value="Select source image"
-                                   onclick="submitSrcImage()">
-                        </div>
-                    </div>
-                </div>
-                <div class="column">
-                    <div class="field">
-                        <label class="label">Reference Image</label>
-                        <div class="control">
-                            <figure class="image is-256x256" style="margin-bottom: 8px">
-                                <img src="https://cdn.jsdelivr.net/gh/justsong-lab/images/misc/placeholder.png" alt="ref" id="showRefImage" width="256" height="256">
-                            </figure>
-                            <input id="refImage" name="ref_image" type="file" accept="image/*" style="display: none">
-                            <input type="submit" class="button is-light" value="Select reference image"
-                                   onclick="submitRefImage()">
-                        </div>
-                    </div>
-                </div>
-                <div class="column">
-                    <div class="field">
-                        <label class="label">Generated Image</label>
-                        <div class="control">
-                            <figure class="image is-256x256" style="margin-bottom: 8px">
-                                <img src="https://cdn.jsdelivr.net/gh/justsong-lab/images/misc/placeholder.png" alt="fake" id="showResImage" width="256" height="256">
-                            </figure>
-                            <input type="submit" class="button is-light" value="Generate"
-                                   onclick="StarGANv2Generate()">
-                        </div>
-                    </div>
-                </div>
-            </div>
+        <div class="message-body">
         </div>
+        </article>
+
+
+        <div class="page-card-title" style="margin-bottom: 16px">帮助我们获取数据集</div>
+
+        <article class="message is-primary">
+            <div class="message-body">
+                <div class="content">
+                    <ul>
+                        <li><strong>模型原理：</strong>可以将我们的模型看作是一个只会普通话的“小孩子”，通过不断地教导他每一句普通话对应的潮汕话，让他领悟普通话和潮汕话之间的转换关系，从而能帮助我们翻译。</li>
+                        <li><strong>我们不会泄露您的个人隐私</strong>，请您放心填写，同时后续我们会开源该项目以及训练数据集。<a onclick="display('more_lb')"> <font color="blue"> [更多] </font> </a></li>
+                    </ul>
+                </div>
+            </div>
+        </article>
+        <div id="more_lb" class="content" style='display:none'>
+        <article class="message is-info">
+                <div class="message-header">
+                    <p>模型的具体情况</p>
+                    <button class="delete" aria-label="delete" onclick="display('more_lb')"></button>
+                </div>
+                <div class="message-body">
+                    <div class="content"><ul>
+                        <li>PT-CS Translator模型采用了目前语音生成领域最新的Waveglow，Tacotron2，Hifi-GAN作为基础模型，加上作者自己开发的StyleTTS模型，转换后的潮汕话将能非常接近真实语音。</li>
+                        <li>普通话数据集采用ST-CMDS，其中包含了常用7000个汉字和日常对话，很适合该项目的目标人群。</li>
+                        <li>训练数据对模型的效果至关重要，我们需要<strong>10000+</strong>句的翻译样本来让模型学习到较好的效果。如果您会说潮汕话，请帮助我们收集数据集。您也可以帮忙分享给您认识的潮汕朋友。
+                        <li>对算法感兴趣的朋友，请查看我的<a href="https://guanyueli.com/how-to-translate-chaoshanhua-to-putonghua/">博客</a>。</li>
+                    </ul>
+                    </div>
+                </div> 
+        </article>
+        </div>
+        
+        <div class="field">
+            <label class="label">性别</label>
+            <div class="control">
+              <label class="radio">
+                <input type="radio" name="question">
+                男
+              </label>
+              <label class="radio">
+                <input type="radio" name="question">
+                女
+              </label>
+            </div>
+          </div>
+
+        <div class="field">
+            <label class="label">地区</label>
+            <div class="control">
+              <div class="select">
+                <select>
+                  <option>汕尾三甲地区</option>
+                  <option>汕尾其他地区</option>
+                  <option>潮州</option>
+                  <option>汕头</option>
+                  <option>揭阳</option>
+                  <option>其他</option>
+                </select>
+            </div>
+            </div>
+            <p class="help">选择最接近您的翻译的地区。</p>
+        </div>
+
+        <div class="field">
+            <label class="label">邮箱</label>
+            <div class="control">
+              <input class="input is-danger" type="email" placeholder="xxxxxxx.@qq.com">
+            </div>
+            <p class="help">用于推送项目的进展，可以不填。</p>
+        </div>
+          
+          <div class="field">
+            <div class="control">
+              <label class="checkbox">
+                <input type="checkbox">
+                我同意将我的翻译作为开放数据集的一部分，点击查看<a onclick="display('invisible_condition')"> <font color="blue"> 具体情况 </font> </a>。
+              </label>
+            </div>
+            <div id="invisible_condition" class="content" style='display:none'>
+                <article class="message is-info">
+                        <div class="message-header">
+                            <p>为什么要开放数据集？</p>
+                            <button class="delete" aria-label="delete" onclick="display('invisible_condition')"></button>
+                        </div>
+                        <div class="message-body">
+                            <div class="content"><ul>
+                                <li>现在人工智能的发展离不开数据，大量的数据可以让计算机模型学习到更好的结果，因此开源数据库是一个非常有意义的事情。作者个人的力量是有限的，如果能让其他开发者也能得到潮汕话的数据集，说不定能够提出更好的翻译模型出来。因此如果不涉及隐私，大胆打勾吧:]</li>
+                                </ul>
+                            </div>
+                        </div> 
+                </article>
+            </div>
+            <p class="help">如果不选，您的翻译只用于训练模型，不会作为开放数据集的一部分。</p>
+          </div>
+
+        <div class="block" style="padding-top:15px;">
+            <div class="field">
+            <div class="control">
+              <button class="button is-link" id="btn_permission" onclick="recOpen('btn_permission', 'label_permission')">开启录音权限</button>
+            </div>
+            <p class="help" id="label_permission">请允许网站调用您的录音设备，我们只保存您录制的音频。</p>
+        </div></div>
+        
+        
+        <div class="block">
+            <article class="message is-success">
+                <div class="message-body">
+                请翻译：我们是好朋友。
+                    <div class="pd recpower" style="padding-top:15px;">
+                        <div style="height:40px;width:300px;background:#999;position:relative;">
+                            <div class="recpowerx" style="height:40px;background:#0B1;position:absolute;" id="mon_x_1"></div>
+                            <div class="recpowert" style="padding-left:50px; line-height:40px; position: relative;" id='mon_t_1'></div>
+                        </div>
+                    </div>
+                    <div class="field" id="ph_span">
+                        
+                    </div>
+                    <div class="field is-grouped" style="padding-top:15px;">
+                        <div class="control">
+                              <button class="button is-link" id="btn_record_1" onclick="recStart('btn_record_1', 'btn_stop_1', 'btn_play_1', 'btn_upload_1')" >录音</button>
+                        </div>
+                        <div class="control">
+                              <button class="button is-link is-light" id="btn_stop_1" onclick="recStop('btn_record_1', 'btn_stop_1', 'btn_play_1', 'btn_upload_1')" disabled>停止</button>
+                        </div>
+                        <div class="control">
+                            <button class="button is-link is-light" id="btn_play_1" onclick="recPlay('btn_record_1', 'btn_stop_1', 'btn_play_1', 'btn_upload_1')" disabled>播放</button>
+                        </div>
+                        <div class="control">
+                            <button class="button is-danger" id="btn_upload_1" onclick="recUpload('btn_record_1', 'btn_stop_1', 'btn_play_1', 'btn_upload_1')" disabled>提交</button>
+                        </div>
+                    </div>
+                </div>
+            </article>
+        </div>
+        
     </div>
 </div>
+
+<!-- 【3】实现录音逻辑 -->
+<script>
+var rec, recBlob;
+/**调用open打开录音请求好录音权限**/
+var recOpen=function(id, id_label){//一般在显示出录音按钮或相关的录音界面时进行此方法调用，后面用户点击开始录音时就能畅通无阻了
+	rec=null;
+	recBlob=null;
+	var newRec=Recorder({
+		type:"mp3",sampleRate:16000,bitRate:16 //mp3格式，指定采样率hz、比特率kbps，其他参数使用默认配置；注意：是数字的参数必须提供数字，不要用字符串；需要使用的type类型，需提前把格式支持文件加载进来，比如使用wav格式需要提前加载wav.js编码引擎
+		,onProcess:function(buffers,powerLevel,bufferDuration,bufferSampleRate,newBufferIdx,asyncEnd){
+			//录音实时回调，大约1秒调用12次本回调
+			document.querySelector(".recpowerx").style.width=powerLevel+"%";
+			document.querySelector(".recpowert").innerText=(bufferDuration/1000).toFixed(2) + " sec";
+		}
+	});
+
+	newRec.open(function(){//打开麦克风授权获得相关资源
+		rec=newRec;
+		//此处创建这些音频可视化图形绘制浏览器支持妥妥的
+		console.log("已打开录音，可以点击录制开始录音了");
+        document.getElementById(id).className = "button is-success";
+        document.getElementById(id).innerHTML = "录音权限成功";
+        document.getElementById(id_label).innerHTML = "成功调用录音功能，请继续！";
+        document.getElementById(id).disabled = "true";
+
+	},function(msg,isUserNotAllow){//用户拒绝未授权或不支持
+		console.log((isUserNotAllow?"UserNotAllow，":"") + "打开录音失败："+msg);
+        document.getElementById(id).className = "button is-danger";
+        document.getElementById(id).innerHTML = "录音权限失败";
+        document.getElementById(id_label).innerHTML = "需要您允许录音功能，请刷新页面重试。";
+	});
+	
+	window.waitDialogClick=function(){
+		console.log("打开失败：权限请求被忽略，<span style='color:#f00'>用户主动点击的弹窗</span>");
+	};
+};
+
+/**关闭录音，释放资源**/
+function recClose(){
+	if(rec){
+		rec.close();
+		console.log("已关闭");
+	}else{
+		console.log("未打开录音");
+	};
+};
+
+/**开始录音**/
+function recStart(id_start, id_stop, id_play, id_upload){//打开了录音后才能进行start、stop调用
+	if(rec&&Recorder.IsOpen()){
+		recBlob=null;
+		rec.start();
+        document.getElementById(id_start).disabled = true;
+        document.getElementById(id_stop).disabled = false;
+        document.getElementById(id_play).disabled = true;
+        document.getElementById(id_upload).disabled = true;
+		console.log("已开始录音...");
+	}else{
+		console.log("未打开录音");
+	};
+};
+
+/**暂停录音**/
+function recPause(){
+	if(rec&&Recorder.IsOpen()){
+		rec.pause();
+	}else{
+		console.log("未打开录音");
+	};
+};
+/**恢复录音**/
+function recResume(){
+	if(rec&&Recorder.IsOpen()){
+		rec.resume();
+	}else{
+		console.log("未打开录音");
+	};
+};
+
+/**结束录音，得到音频文件**/
+function recStop(id_start, id_stop, id_play, id_upload){
+	if(!(rec&&Recorder.IsOpen())){
+		console.log("未打开录音");
+		return;
+	};
+	rec.stop(function(blob,duration){
+		console.log(blob,(window.URL||webkitURL).createObjectURL(blob),"时长:"+duration+"ms");
+		recBlob=blob;
+        document.getElementById(id_start).disabled = false;
+        document.getElementById(id_stop).disabled = true;
+        document.getElementById(id_play).disabled = false;
+        document.getElementById(id_upload).disabled = false;
+		console.log("已录制mp3："+duration+"ms "+blob.size+"字节，可以点击播放、上传了");
+	},function(msg){
+		console.log("录音失败:"+msg);
+	});
+};
+
+/**播放**/
+function recPlay(){
+	if(!recBlob){
+		console.log("请先录音，然后停止后再播放");
+		return;
+	};
+
+	var cls=("a"+Math.random()).replace(".","");
+    document.getElementById("ph_span").innerHTML='<span class="'+cls+'"></span>';
+	console.log('播放中: ' + cls);
+	var audio=document.createElement("audio");
+	audio.controls=true;
+	document.querySelector("."+cls).appendChild(audio);
+	//简单利用URL生成播放地址，注意不用了时需要revokeObjectURL，否则霸占内存
+	audio.src=(window.URL||webkitURL).createObjectURL(recBlob);
+	audio.play();
+	
+	setTimeout(function(){
+		(window.URL||webkitURL).revokeObjectURL(audio.src);
+	},5000);
+};
+
+/**上传**/
+async function recUpload(id_start, id_stop, id_play, id_upload){
+	var blob=recBlob;
+	if(!blob){
+		console.log("请先录音，然后停止后再上传");
+		return;
+	};
+
+    // 将所有的按钮都不可选用，等待成功后新一组进行翻译
+    document.getElementById(id_start).disabled = true;
+    document.getElementById(id_stop).disabled = true;
+    document.getElementById(id_play).disabled = true;
+    document.getElementById(id_upload).disabled = true;
+	
+	//本例子假设使用原始XMLHttpRequest请求方式，实际使用中自行调整为自己的请求方式
+	//录音结束时拿到了blob文件对象，可以用FileReader读取出内容，或者用FormData上传
+
+	/***方式二：使用FormData用multipart/form-data表单上传文件***/
+
+    var onreadystatechange=function(title){
+		return function(){
+			if(xhr.readyState==4){
+				if(xhr.status==200){
+					console.log(title+"上传成功");
+				}else{
+					console.log(title+"没有完成上传，演示上传地址无需关注上传结果，只要浏览器控制台内Network面板内看到的请求数据结构是预期的就ok了。");
+					
+					console.error(title+"上传失败",xhr.status,xhr.responseText);
+				};
+			};
+		};
+	};
+
+    var form=new FormData();
+	form.append("upfile",blob, "recorder.mp3"); //和普通form表单并无二致，后端接收到upfile参数的文件，文件名为recorder.mp3
+    form.append("file_name", "recorder.mp3");
+	//...其他表单参数
+	
+	var xhr=new XMLHttpRequest();
+	xhr.open("POST", "/api/upload");
+	xhr.onreadystatechange=onreadystatechange("上传方式二【FormData】");
+	xhr.send(form);
+
+    document.getElementById(id_start).disabled = false;
+    document.getElementById(id_stop).disabled = true;
+    document.getElementById(id_play).disabled = true;
+    document.getElementById(id_upload).disabled = true;
+};
+</script>
 
 {% include './partials/footer.html' %}

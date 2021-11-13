@@ -1,6 +1,7 @@
 import werkzeug
 from flask import Flask, render_template, send_from_directory, request
 from munch import Munch
+import numpy as np
 
 from models import StarGANv2
 from utils import load_cfg, cache_path
@@ -28,7 +29,7 @@ def page_not_found(e):
 def model_page(model_id):
     if model_id in cfg.models:
         model = cfg.models[model_id]
-        return render_template(f'{model_id}.html', title=model['name'], description=model['description'])
+        return render_template(f'{model_id}.html', title=model['name'], description=model['description'], description_en=model["description_en"])
     else:
         return render_template('index.html', message=f'No such model: {model_id}.', is_warning=True)
 
@@ -40,7 +41,7 @@ def model_inference():
         "message": "default message",
         "data": None
     })
-
+    print("I receive!")
     try:
         model_name = request.form['model']
         if model_name == 'starganv2_afhq':
@@ -54,6 +55,26 @@ def model_inference():
         print(e)
     return res
 
+@app.route('/api/upload', methods=['POST'])
+def upload():
+    res = Munch({
+        "success": False,
+        "next_sentence": "Please translate: I received your message. ",
+        "data": None
+    })
+    print("I received 2")
+    try:
+        f = request.files['upfile']
+        data = f.read()
+        with open('test.mp3', 'wb') as file_out:
+            file_out.write(data)
+        
+    except Exception as e:
+        res.message = str(e)
+        print(e)
+        
+    return res  
+
 
 @app.route('/cache/<path:filename>')
 def cached_image(filename):
@@ -66,7 +87,7 @@ def predict(model_name):
         "success": True,
         "message": model_name
     }
-
+        
 
 StarGANv2.init(cfg.device)
 
