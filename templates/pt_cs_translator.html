@@ -4,16 +4,7 @@
 
 <div class="normal-container">
     {% include './partials/message.html' %}
-    <script type="text/javascript">
-        function display(id){
-            var target = document.getElementById(id);
-            if(target.style.display=="none"){
-                target.style.display="";
-            }else{
-                target.style.display="none";
-            }
-        }
-    </script>
+
     <nav class="level">
         <div class="level-item has-text-centered">
           <div>
@@ -24,7 +15,7 @@
         <div class="level-item has-text-centered">
           <div>
             <p class="heading">已经有这么多人贡献了他们的翻译</p>
-            <p class="title">{{count_translations}}</p>
+            <p class="title" id="label_count_translations">{{count_translations}}</p>
           </div>
         </div>
       </nav>
@@ -80,11 +71,11 @@
             <label class="label">性别</label>
             <div class="control">
               <label class="radio">
-                <input type="radio" name="question">
+              <input type="radio" name="question" id='label_male' checked>
                 男
               </label>
               <label class="radio">
-                <input type="radio" name="question">
+                <input type="radio" name="question" id='label_female'>
                 女
               </label>
             </div>
@@ -94,7 +85,7 @@
             <label class="label">地区</label>
             <div class="control">
               <div class="select">
-                <select>
+                <select id='select_region'>
                   <option>汕尾三甲地区</option>
                   <option>汕尾其他地区</option>
                   <option>潮州</option>
@@ -110,7 +101,7 @@
         <div class="field">
             <label class="label">邮箱</label>
             <div class="control">
-              <input class="input is-danger" type="email" placeholder="xxxxxxx.@qq.com">
+              <input class="input is-success" type="email" placeholder="xxxxxxx.@qq.com" id="email_input">
             </div>
             <p class="help">用于推送项目的进展，可以不填。</p>
         </div>
@@ -118,7 +109,7 @@
           <div class="field">
             <div class="control">
               <label class="checkbox">
-                <input type="checkbox">
+                <input type="checkbox" id="condition_checkbox">
                 我同意将我的翻译作为开放数据集的一部分，点击查看<a onclick="display('invisible_condition')"> <font color="blue"> 具体情况 </font> </a>。
               </label>
             </div>
@@ -146,12 +137,13 @@
             </div>
             <p class="help" id="label_permission">请允许网站调用您的录音设备，我们只保存您录制的音频。</p>
         </div></div>
-        
-        
+
         <div class="block">
             <article class="message is-success">
                 <div class="message-body">
-                （第一句用于测试，测试完成点击提交，开始正式翻译）请翻译：我们是好朋友。
+                <p id="label_translation_text"></p>
+                <audio controls src="/data/demo.wav" style="padding-top:15px;"></audio>
+                <p class="help"><font color="black" style="padding-left:30px;">如果断句困难，点击听一听。</font></p>
                     <div class="pd recpower" style="padding-top:15px;">
                         <div style="height:40px;width:300px;background:#999;position:relative;">
                             <div class="recpowerx" style="height:40px;background:#0B1;position:absolute;" id="mon_x_1"></div>
@@ -182,11 +174,19 @@
     </div>
 </div>
 
-<!-- 【3】实现录音逻辑 -->
 <script>
+var next_sentence = "（测试用，用于熟悉录音界面，提交后正式开始）请翻译：我做你的支持者噢";
+var which_sentence = -1;
+var next_sentence_file_name = "";
+var n_translations=0;
 var rec, recBlob;
+
+// Init
+let translate = document.getElementById("label_translation_text");
+translate.innerHTML=next_sentence;
+
 /**调用open打开录音请求好录音权限**/
-var recOpen=function(id, id_label){//一般在显示出录音按钮或相关的录音界面时进行此方法调用，后面用户点击开始录音时就能畅通无阻了
+function recOpen(id, id_label){//一般在显示出录音按钮或相关的录音界面时进行此方法调用，后面用户点击开始录音时就能畅通无阻了
 	rec=null;
 	recBlob=null;
 	var newRec=Recorder({
@@ -321,35 +321,64 @@ async function recUpload(id_start, id_stop, id_play, id_upload){
 
 	/***方式二：使用FormData用multipart/form-data表单上传文件***/
 
-    var onreadystatechange=function(title){
-		return function(){
-			if(xhr.readyState==4){
-				if(xhr.status==200){
-					console.log(title+"上传成功");
-				}else{
-					console.log(title+"没有完成上传，演示上传地址无需关注上传结果，只要浏览器控制台内Network面板内看到的请求数据结构是预期的就ok了。");
-					
-					console.error(title+"上传失败",xhr.status,xhr.responseText);
-				};
-			};
-		};
-	};
+    let isFemale_ratio = document.getElementById("label_female");
+    gender = "male"
+    if(isFemale_ratio.checked) gender = "female";
+    let which_region = document.getElementById('select_region');
+    var index=which_region.selectedIndex;
+    let region = which_region.options[index].text;
+    let email_input = document.getElementById('email_input');
+    email = "xx@xx";
+    if(email_input.value) email = email_input.value;
+    
+    condition = false;
+    let condition_checkbox = document.getElementById('condition_checkbox');
+    if (condition_checkbox.checked) condition = true;
+
+    console.log(gender, region, email, condition);
 
     var form=new FormData();
 	form.append("upfile", blob, "recorder.mp3"); //和普通form表单并无二致，后端接收到upfile参数的文件，文件名为recorder.mp3
-    form.append("file_name", "recorder.mp3");
-	//...其他表单参数
-	
-	var xhr=new XMLHttpRequest();
-	xhr.open("POST", "/api/upload");
-	xhr.onreadystatechange=onreadystatechange("上传方式二【FormData】");
-	xhr.send(form);
+    form.append("gender", gender);
+    form.append("region", region);
+    form.append("email", email);
+    form.append("condition", condition);
+    form.append("next_sentence", next_sentence);
+    form.append("next_sentence_file_name", next_sentence_file_name);
+    form.append("n_translations", n_translations);
+    form.append("which_sentence", which_sentence)
 
+    let res = await fetch("/api/upload", {
+        method: 'post',
+        body: form
+    });
+    let data = await res.json();
+    if (data.success) {
+        console.log(data)
+        next_sentence = data.next_sentence;
+        next_sentence_file_name = data.next_sentence_file_name
+        document.getElementById("label_translation_text").innerHTML = (n_translations+1) + "、 " + data.next_sentence;
+        document.getElementById("label_count_translations").innerHTML = data.count_translations;
+    } else {
+        document.getElementById("label_translation_text").innerHTML = "出现错误，无法上传服务器";
+    }
+	//...其他表单参数
+    
     document.getElementById(id_start).disabled = false;
     document.getElementById(id_stop).disabled = true;
     document.getElementById(id_play).disabled = true;
     document.getElementById(id_upload).disabled = true;
+    n_translations += 1;
 };
+
+function display(id){
+    var target = document.getElementById(id);
+    if(target.style.display=="none"){
+        target.style.display="";
+    }else{
+        target.style.display="none";
+    }
+}
 </script>
 
 {% include './partials/footer.html' %}

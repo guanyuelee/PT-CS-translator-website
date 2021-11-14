@@ -8,6 +8,12 @@ import torch
 from PIL import Image
 from munch import Munch
 
+TRANSLATION_PATH = "./data/translations"
+INDEX_PATH = "./data/index"
+COUNT_PATH = "./data/private/visits.txt"
+WHICH_PATH = "./data/private/which.txt"
+SENTENCE_DATA_PATH = './data/filelists/st_cmds_test_filelist.txt'
+SLEEP_TIME = 5
 
 def load_cfg(cfg_path="config.json"):
     assert os.path.exists(cfg_path), "config.json is missing!"
@@ -66,25 +72,70 @@ def save_images(imgs):
         filenames.append(filename)
     return filenames
 
-file_name = 'visits.txt'
-path = "./data/private"
-
-def init_visits():
-    if not os.path.exists(os.path.join(path, file_name)):
-        with open(os.path.join(path, file_name), 'w') as file_out:
-            file_out.write("0")
+def init_translation_data():
+    if not os.path.exists(TRANSLATION_PATH):
+        os.makedirs(TRANSLATION_PATH, exist_ok=True)
     
-    with open(os.path.join(path, file_name), 'r') as file_in:
+    dirs = os.listdir(TRANSLATION_PATH)
+    return len(dirs)
+
+def create_random_file_name():
+    random_name = str(uuid.uuid4())
+    return ''.join(random_name.split('-'))
+
+def save_mp3_file(bytes, file_name):
+    if not os.path.exists(TRANSLATION_PATH):
+        os.makedirs(TRANSLATION_PATH, exist_ok=True)
+    
+    with open(os.path.join(TRANSLATION_PATH, file_name), 'wb') as file_out:
+        file_out.write(bytes)
+
+def save_index_file(*args):
+    if not os.path.exists(INDEX_PATH):
+        os.makedirs(INDEX_PATH, exist_ok=True)
+    
+    next_sentence_file_name, next_sentence, file_name, gender, region, email, condition = args
+    
+    with open(os.path.join(INDEX_PATH, "index.txt"), 'a') as file_out:
+        file_out.write("|".join(list(args)) + "\n")
+
+def load_filepaths_and_text(filename, split=" | "):
+    with open(filename, encoding='utf-8') as f:
+        filepaths_and_text = [line.strip().split(split) for line in f]
+    return filepaths_and_text
+    
+
+def base_count_init(PATH):
+    parent_dir = os.path.dirname(os.path.realpath(PATH))
+    if not os.path.exists(parent_dir):
+        os.makedirs(parent_dir, exist_ok=True)
+    
+    if not os.path.exists(PATH):
+        with open(PATH, 'w') as file_out:
+            file_out.write("0")
+       
+    with open(PATH, 'r') as file_in:
         n_visits = file_in.readline().strip('\n').strip(" ")
         n_visits = int(n_visits)
         
     return n_visits
 
-def init_translation_data():
+def init_visits():
+    return base_count_init(COUNT_PATH)
 
-    path = "./data/translation"
-    dirs = os.listdir(path)
-    return dirs, len(dirs)
+def init_sentence_data():
+    lists = load_filepaths_and_text(SENTENCE_DATA_PATH)
+    return base_count_init(WHICH_PATH), lists 
 
-
-        
+def pt_cs_translator_init():
+    count_visits = init_visits()
+    count_translations = init_translation_data()
+    which_sentence_idx, sentence_list = init_sentence_data()
+    return count_visits, count_translations, which_sentence_idx, sentence_list
+            
+def easy_save_count(which_one, file_name):
+    with open(file_name, 'w') as file_out:
+            file_out.write(str(which_one))
+            
+def get_count_translations():
+    return len(os.listdir(TRANSLATION_PATH))
