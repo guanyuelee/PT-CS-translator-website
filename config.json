@@ -20,7 +20,8 @@
     },
     "starganv2_afhq": {
       "name": "Pretrained StarGANv2 model on AFHQ",
-      "description": "This model can be used to translate animal faces."
+      "description": "This model can be used to translate animal faces.",
+      "description_en": "This model can be used to translate animal faces."
     }
   }
 }

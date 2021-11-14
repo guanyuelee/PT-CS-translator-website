@@ -65,3 +65,26 @@ def save_images(imgs):
         img.save(filename)
         filenames.append(filename)
     return filenames
+
+file_name = 'visits.txt'
+path = "./data/private"
+
+def init_visits():
+    if not os.path.exists(os.path.join(path, file_name)):
+        with open(os.path.join(path, file_name), 'w') as file_out:
+            file_out.write("0")
+    
+    with open(os.path.join(path, file_name), 'r') as file_in:
+        n_visits = file_in.readline().strip('\n').strip(" ")
+        n_visits = int(n_visits)
+        
+    return n_visits
+
+def init_translation_data():
+
+    path = "./data/translation"
+    dirs = os.listdir(path)
+    return dirs, len(dirs)
+
+
+        

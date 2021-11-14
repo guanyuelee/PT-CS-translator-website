@@ -18,13 +18,13 @@
         <div class="level-item has-text-centered">
           <div>
             <p class="heading">浏览次数</p>
-            <p class="title">3,456</p>
+            <p class="title">{{count_visits}}</p>
           </div>
         </div>
         <div class="level-item has-text-centered">
           <div>
             <p class="heading">已经有这么多人贡献了他们的翻译</p>
-            <p class="title">123</p>
+            <p class="title">{{count_translations}}</p>
           </div>
         </div>
       </nav>
@@ -151,7 +151,7 @@
         <div class="block">
             <article class="message is-success">
                 <div class="message-body">
-                请翻译：我们是好朋友。
+                （第一句用于测试，测试完成点击提交，开始正式翻译）请翻译：我们是好朋友。
                     <div class="pd recpower" style="padding-top:15px;">
                         <div style="height:40px;width:300px;background:#999;position:relative;">
                             <div class="recpowerx" style="height:40px;background:#0B1;position:absolute;" id="mon_x_1"></div>
@@ -336,7 +336,7 @@ async function recUpload(id_start, id_stop, id_play, id_upload){
 	};
 
     var form=new FormData();
-	form.append("upfile",blob, "recorder.mp3"); //和普通form表单并无二致，后端接收到upfile参数的文件，文件名为recorder.mp3
+	form.append("upfile", blob, "recorder.mp3"); //和普通form表单并无二致，后端接收到upfile参数的文件，文件名为recorder.mp3
     form.append("file_name", "recorder.mp3");
 	//...其他表单参数
 	
