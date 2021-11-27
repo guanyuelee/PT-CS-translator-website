@@ -17,10 +17,8 @@ def get_one_pt_text(cursor, connection):
         return None
 
 def check_is_valid(cursor, id):
-    print("id is ", id)
     cursor.execute("SELECT * FROM %s WHERE ID==%d" % (TABLE_NAME, id))
     data = cursor.fetchone()
-    print(data)
     if data is not None:
         id, _, _, is_translated, _, _ = data
         if is_translated == 1:
@@ -66,15 +64,6 @@ def insert_visits_count(cursor, connection, id, model):
     print("INSERT INTO %s VALUES (%d, \'%s\')" % (TABLE_VISITS, id, model))
     cursor.execute("INSERT INTO %s VALUES (%d, \'%s\')" % (TABLE_VISITS, id, model))
     connection.commit()
-
-if __name__ == "__main__":
-    
-    connection = sqlite.connect(DATABASE_FILE)
-    
-    with connection:
-        cur = connection.cursor()
-        id, filename, text = get_one_pt_text(cur, connection)
-        print(id, filename, text)
     
     
 

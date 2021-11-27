@@ -4,3 +4,8 @@
 *.ckpt
 cache
 temp
+data
+__pycache__
+*.db
+PT_CS_Dataset.db
+

@@ -84,6 +84,7 @@ def model_inference():
 
 @app.route('/api/upload', methods=['POST'])
 def upload():
+    print("#####################", time.time(), "#####################")
     res = Munch({
         "success": False,
         "next_sentence": None,
@@ -98,8 +99,12 @@ def upload():
         # save data
         connection = sqlite.connect(DATABASE_FILE)
         cursor = connection.cursor()
-        is_next = True if request.form['next_is_click'] else False
-        if is_next:
+        print("Note: We have linked the database successfully. ")
+        is_next = True if int(request.form['next_is_click']) else False
+        print("Note: The use click \'is_next\'=", is_next)
+        
+        if not is_next:
+            print("Note: Save the data!")
             gender = request.form["gender"]
             n_translations = int(request.form["n_translations"])  # The order of sentence that user translates. 
             region = request.form['region']
@@ -110,9 +115,7 @@ def upload():
             which_sentence = int(request.form["which_sentence"])
             
             if n_translations != 0:
-                print(n_translations)
                 is_valid = check_is_valid(cursor, which_sentence)
-                print(is_valid)
                 if is_valid:
                     update_database_when_received(cursor, connection, which_sentence)
                     id = get_translation_count(cursor) + 1
@@ -122,13 +125,13 @@ def upload():
                     save_mp3_file(bytes, file_name)
                     insert_translation(cursor, connection, id, gender, region, email, condition, pt_text=next_sentence, 
                                     pt_file=next_sentence_file_name, cs_file=file_name, pt_id=which_sentence)
-            
+        
+        print("Note: Fetch new data!")
         # respond next sentence. 
         data = get_one_pt_text(cursor, connection)
-        
+        print("Note: new data is ", data)
         if data is not None:
             which_sentence, next_sentence_file_name, next_sentence = data
-            print("return data is ", data)
             res.which_sentence = which_sentence
             res.next_sentence_file_name = next_sentence_file_name
             res.next_sentence = next_sentence
@@ -143,8 +146,9 @@ def upload():
         
     except Exception as e:
         res.message = str(e)
-        print(e)
-        
+        print("Error: ", e)
+    
+    print("^^^^^^^^^^^^^^^^^^^^^^^", time.time(), "^^^^^^^^^^^^^^^^^^^^^^^^^")
     return res  
 
 

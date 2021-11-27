@@ -1,4 +1,3 @@
-// Credit: https://codepen.io/t7team/pen/ZowdRN
 function openTab(e, tabName) {
     let i, x, tabLinks;
     x = document.getElementsByClassName('content-tab');
@@ -85,16 +84,6 @@ function display(id){
         target.style.display="none";
     }
 }
-
-var next_sentence = "（测试用，用于熟悉录音界面，提交后正式开始）请翻译：我做你的支持者噢";
-var which_sentence = -1;
-var next_sentence_file_name = "";
-var n_translations=0;
-var rec, recBlob;
-
-// Init
-let translate = document.getElementById("label_translation_text");
-translate.innerHTML=next_sentence;
 
 /**调用open打开录音请求好录音权限**/
 function recOpen(id, id_label){//一般在显示出录音按钮或相关的录音界面时进行此方法调用，后面用户点击开始录音时就能畅通无阻了
@@ -266,6 +255,7 @@ async function recUpload(id_start, id_stop, id_play, id_upload){
     form.append("n_translations", n_translations);
     form.append("which_sentence", which_sentence);
     form.append("next_is_click", false);
+    console.log(form)
 
     let res = await fetch("/api/upload", {
         method: 'post',
