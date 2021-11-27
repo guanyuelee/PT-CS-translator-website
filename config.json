@@ -17,11 +17,6 @@
       "name": "普通话-潮汕话翻译器 (PT-CS Translator)",
       "description": "普通话是中国政府推行的统一语言，而潮汕话是广东潮汕地区独有的方言，使用人数大概为1000万人。PT-CS Translator模型利用机器学习实现了普通话和潮汕话的互译，来帮助潮汕地区不识字的人们平等接收信息。",
       "description_en": "PuTongHua is the standard language in China, while ChaoShanHua, a unique dialect in ChaoShan Region, Guangdong Province, is widely spoken by about 10 millions residents. PT-CS Translator translates two different languages between PuTongHua and ChaoShanHua, faciliating Machine Learning to help illiterate people with equal right for information."
-    },
-    "starganv2_afhq": {
-      "name": "Pretrained StarGANv2 model on AFHQ",
-      "description": "This model can be used to translate animal faces.",
-      "description_en": "This model can be used to translate animal faces."
     }
   }
 }

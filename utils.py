@@ -89,6 +89,7 @@ def save_mp3_file(bytes, file_name):
     
     with open(os.path.join(TRANSLATION_PATH, file_name), 'wb') as file_out:
         file_out.write(bytes)
+        print('Save to %s'%os.path.join(TRANSLATION_PATH, file_name))
 
 def save_index_file(*args):
     if not os.path.exists(INDEX_PATH):

@@ -1,3 +1,4 @@
+from sqlite3.dbapi2 import SQLITE_UPDATE
 import werkzeug
 from flask import Flask, render_template, send_from_directory, request
 from munch import Munch
@@ -5,19 +6,29 @@ import numpy as np
 import _thread
 import os
 import time
+import sqlite3 as sqlite
 
 from models import StarGANv2
-from utils import WHICH_PATH, load_cfg, cache_path, data_path, create_random_file_name, save_mp3_file, save_index_file, pt_cs_translator_init,\
-    easy_save_count, get_count_translations
-from utils import COUNT_PATH, SLEEP_TIME, WHICH_PATH
+from utils import load_cfg, cache_path, data_path, create_random_file_name, save_mp3_file
+from utils import SLEEP_TIME
+
+from database_utils import *
 
 cfg = load_cfg()
 app = Flask(__name__)
-total_targets = []
-cur_translation_list = []
 
-count_translations = 0
-count_visits = 0
+def save_count_visits():
+    while True:
+        time.sleep(SLEEP_TIME)   # 5 sec
+        connection = sqlite.connect(DATABASE_FILE)
+        cursor = connection.cursor()
+        update_database_periodically(cursor, connection, expire_time=20)   # a connection that is not respended for over 300s will be reset.
+        connection.close() 
+
+try:
+    _thread.start_new_thread(save_count_visits, (), )
+except:
+    print("Error: unable to start thread")
 
 @app.context_processor
 def inject_config():
@@ -36,13 +47,19 @@ def page_not_found(e):
 
 @app.route('/model/<model_id>', methods=['GET'])
 def model_page(model_id):
-    global count_visits
-    
-    count_visits += 1
     if model_id in cfg.models:
+        connection = sqlite.connect(DATABASE_FILE)
+        cursor = connection.cursor()
         model = cfg.models[model_id]
-        return render_template(f'{model_id}.html', title=model['name'], description=model['description'], description_en=model["description_en"], 
-                               count_visits=count_visits, count_translations=get_count_translations())
+        n_visits = get_all_visits_count(cursor)
+        insert_visits_count(cursor, connection, n_visits + 1, model_id)
+        all_page_visits = get_visits_count(cursor, model_id)
+        trans_count = get_translation_count(cursor)
+        connection.close()
+        return render_template(f'{model_id}.html', title=model['name'], description=model['description'], 
+                               description_en=model["description_en"], 
+                               count_visits=all_page_visits, 
+                               count_translations=trans_count)
     else:
         return render_template('index.html', message=f'No such model: {model_id}.', is_warning=True)
 
@@ -54,12 +71,9 @@ def model_inference():
         "message": "default message",
         "data": None
     })
-    print("I receive!")
     try:
         model_name = request.form['model']
         if model_name == 'starganv2_afhq':
-            res = StarGANv2.controller(request)
-        elif model_name == 'pt_cs_translator':
             res = StarGANv2.controller(request)
         else:
             res.message = f"no such model: {model_name}"
@@ -75,36 +89,58 @@ def upload():
         "next_sentence": None,
         "next_sentence_file_name": None, 
         "which_sentence": None, 
-        "count_translations": 0
+        "count_translations": 0,
+        "message": "我们已经翻译完毕了！感谢您的付出！请看顶部我们收集了多少翻译。", 
+        "isEnd": False
     })
     
     try:
         # save data
-        gender = request.form["gender"]
-        n_translations = int(request.form["n_translations"])  # The order of sentence that user translates. 
-        region = request.form['region']
-        email = request.form["email"]
-        condition = request.form["condition"]
-        next_sentence = request.form["next_sentence"]
-        next_sentence_file_name = request.form["next_sentence_file_name"]
-        
-        if n_translations != 0:
-            # if not testing sentence, just ignore. 
-            file_name = create_random_file_name() + ".mp3"
-            bytes = request.files['upfile'].read()
-            save_mp3_file(bytes, file_name)
-            save_index_file(next_sentence_file_name, next_sentence, file_name, gender, region, email, condition)
-            print(f"{n_translations}")
-        
+        is_next = True if request.form["which_sentence"] else False
+        if not is_next:
+            gender = request.form["gender"]
+            n_translations = int(request.form["n_translations"])  # The order of sentence that user translates. 
+            region = request.form['region']
+            email = request.form["email"]
+            condition = 1 if request.form["condition"] else 0
+            next_sentence = request.form["next_sentence"]
+            next_sentence_file_name = request.form["next_sentence_file_name"]
+            which_sentence = int(request.form["which_sentence"])
+            
+            connection = sqlite.connect(DATABASE_FILE)
+            cursor = connection.cursor()
+            
+            if n_translations != 0:
+                print(n_translations)
+                is_valid = check_is_valid(cursor, which_sentence)
+                print(is_valid)
+                if is_valid:
+                    update_database_when_received(cursor, connection, which_sentence)
+                    id = get_translation_count(cursor) + 1
+                    # if not testing sentence, just ignore. 
+                    file_name = create_random_file_name() + ".mp3"
+                    bytes = request.files['upfile'].read()
+                    save_mp3_file(bytes, file_name)
+                    insert_translation(cursor, connection, id, gender, region, email, condition, pt_text=next_sentence, 
+                                    pt_file=next_sentence_file_name, cs_file=file_name, pt_id=which_sentence)
+            
         # respond next sentence. 
-        global which_sentence
-        which_sentence += 1
-        res.which_sentence = which_sentence
-        res.which_sentence = which_sentence
-        res.next_sentence_file_name = sentence_lists[res.which_sentence % N_SENTENCES][0]
-        res.next_sentence = sentence_lists[res.which_sentence % N_SENTENCES][1]
-        res.count_translations = get_count_translations()
-        res.success = True
+        data = get_one_pt_text(cursor, connection)
+        
+        if data is not None:
+            which_sentence, next_sentence_file_name, next_sentence = data
+            print("return data is ", data)
+            res.which_sentence = which_sentence
+            res.next_sentence_file_name = next_sentence_file_name
+            res.next_sentence = next_sentence
+            res.count_translations = get_translation_count(cursor)
+            res.success = True
+        else:
+            res.count_translations = get_translation_count(cursor)
+            res.success = True
+            res.isEnd = True
+            
+        connection.close()
         
     except Exception as e:
         res.message = str(e)
@@ -129,21 +165,7 @@ def predict(model_name):
         "message": model_name
     }
 
-StarGANv2.init(cfg.device)
-
-count_visits, count_translations, which_sentence, sentence_lists = pt_cs_translator_init()
-N_SENTENCES = len(sentence_lists)
-
-def save_count_visits():
-    while True:
-        time.sleep(SLEEP_TIME)
-        easy_save_count(count_visits, file_name=COUNT_PATH)
-        easy_save_count(which_sentence, file_name=WHICH_PATH)
-    
-try:
-    _thread.start_new_thread(save_count_visits, (), )
-except:
-    print("Error: unable to start thread")
+# StarGANv2.init(cfg.device)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=cfg.port)

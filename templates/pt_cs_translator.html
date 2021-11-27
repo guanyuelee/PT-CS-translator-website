@@ -36,7 +36,6 @@
         </div>
         </article>
 
-
         <div class="page-card-title" style="margin-bottom: 16px">帮助我们获取数据集</div>
 
         <article class="message is-primary">
@@ -143,7 +142,7 @@
                 <div class="message-body">
                 <p id="label_translation_text"></p>
                 <audio controls src="/data/demo.wav" style="padding-top:15px;"></audio>
-                <p class="help"><font color="black" style="padding-left:30px;">如果断句困难，点击听一听。</font></p>
+                <p class="help"><font color="black" style="padding-left:30px;" id="label_recording">如果断句困难，点击听一听。</font></p>
                     <div class="pd recpower" style="padding-top:15px;">
                         <div style="height:40px;width:300px;background:#999;position:relative;">
                             <div class="recpowerx" style="height:40px;background:#0B1;position:absolute;" id="mon_x_1"></div>
@@ -158,7 +157,7 @@
                               <button class="button is-link" id="btn_record_1" onclick="recStart('btn_record_1', 'btn_stop_1', 'btn_play_1', 'btn_upload_1')" >录音</button>
                         </div>
                         <div class="control">
-                              <button class="button is-link is-light" id="btn_stop_1" onclick="recStop('btn_record_1', 'btn_stop_1', 'btn_play_1', 'btn_upload_1')" disabled>停止</button>
+                              <button class="button is-link" id="btn_stop_1" onclick="recStop('btn_record_1', 'btn_stop_1', 'btn_play_1', 'btn_upload_1')" disabled>停止</button>
                         </div>
                         <div class="control">
                             <button class="button is-link is-light" id="btn_play_1" onclick="recPlay('btn_record_1', 'btn_stop_1', 'btn_play_1', 'btn_upload_1')" disabled>播放</button>
@@ -167,9 +166,18 @@
                             <button class="button is-danger" id="btn_upload_1" onclick="recUpload('btn_record_1', 'btn_stop_1', 'btn_play_1', 'btn_upload_1')" disabled>提交</button>
                         </div>
                     </div>
+                    <p id="label_say_something" class="help"></p>
+                    <p class="help">录音：点击开始（重新）录音；</p>
+                    <p class="help">停止：翻译结束；</p>
+                    <p class="help">播放：点击听录音，不满意可以再次录音；</p>
+                    <p class="help">提交：提交翻译；</p>
+                    <div class="control">
+                        <button class="button is-link is-light" id="btn_next" onclick="recNext()" disabled>这一句太难</button>
+                    </div>
                 </div>
             </article>
         </div>
+        
         
     </div>
 </div>
@@ -211,7 +219,7 @@ function recOpen(id, id_label){//一般在显示出录音按钮或相关的录�
 		console.log((isUserNotAllow?"UserNotAllow，":"") + "打开录音失败："+msg);
         document.getElementById(id).className = "button is-danger";
         document.getElementById(id).innerHTML = "录音权限失败";
-        document.getElementById(id_label).innerHTML = "需要您允许录音功能，请刷新页面重试。";
+        document.getElementById(id_label).innerHTML = "如果您的手机无法开启权限，可以用电脑。";
 	});
 	
 	window.waitDialogClick=function(){
@@ -242,6 +250,83 @@ function recStart(id_start, id_stop, id_play, id_upload){//打开了录音后才
 	}else{
 		console.log("未打开录音");
 	};
+};
+
+function recNext(){  //下一句
+	document.getElementById("label_say_something").innerHTML = "";
+	var blob=recBlob;
+	if(!blob){
+		console.log("请先录音，然后停止后再上传");
+		return;
+	};
+
+    document.querySelector("."+cls).innerHTML="";
+
+    // 将所有的按钮都不可选用，等待成功后新一组进行翻译
+    document.getElementById(id_start).disabled = true;
+    document.getElementById(id_stop).disabled = true;
+    document.getElementById(id_play).disabled = true;
+    document.getElementById(id_upload).disabled = true;
+	
+	//本例子假设使用原始XMLHttpRequest请求方式，实际使用中自行调整为自己的请求方式
+	//录音结束时拿到了blob文件对象，可以用FileReader读取出内容，或者用FormData上传
+
+	/***方式二：使用FormData用multipart/form-data表单上传文件***/
+
+    let isFemale_ratio = document.getElementById("label_female");
+    gender = "male"
+    if(isFemale_ratio.checked) gender = "female";
+    let which_region = document.getElementById('select_region');
+    var index=which_region.selectedIndex;
+    let region = which_region.options[index].text;
+    let email_input = document.getElementById('email_input');
+    email = "xx@xx";
+    if(email_input.value) email = email_input.value;
+    
+    condition = false;
+    let condition_checkbox = document.getElementById('condition_checkbox');
+    if (condition_checkbox.checked) condition = true;
+
+    console.log(gender, region, email, condition, next_sentence);
+
+    var form=new FormData();
+	form.append("upfile", blob, "recorder.mp3"); //和普通form表单并无二致，后端接收到upfile参数的文件，文件名为recorder.mp3
+    form.append("gender", gender);
+    form.append("region", region);
+    form.append("email", email);
+    form.append("condition", condition);
+    form.append("next_sentence", next_sentence);
+    form.append("next_sentence_file_name", next_sentence_file_name);
+    form.append("n_translations", n_translations);
+    form.append("which_sentence", which_sentence);
+    form.append("is_next", false);
+
+    let res = await fetch("/api/upload", {
+        method: 'post',
+        body: form
+    });
+    let data = await res.json();
+    if (data.success) {
+        console.log(data)
+
+        if(data.isEnd){
+            document.getElementById(id_start).disabled = true;
+            document.getElementById("label_recording").innerHTML = data.message;
+        }else{
+            which_sentence = data.which_sentence;
+            next_sentence = data.next_sentence;
+            next_sentence_file_name = data.next_sentence_file_name
+            document.getElementById("label_translation_text").innerHTML = (n_translations+1) + "、 " + data.next_sentence;
+            document.getElementById("label_count_translations").innerHTML = data.count_translations;
+            document.getElementById("label_say_something").innerHTML = "";
+        }
+    } else {
+        document.getElementById("label_translation_text").innerHTML = "出现错误，无法上传服务器";
+    }
+    document.getElementById(id_start).disabled = false;
+    document.getElementById(id_stop).disabled = true;
+    document.getElementById(id_play).disabled = true;
+    document.getElementById(id_upload).disabled = true;
 };
 
 /**暂停录音**/
@@ -281,13 +366,14 @@ function recStop(id_start, id_stop, id_play, id_upload){
 };
 
 /**播放**/
+var cls = ("a"+Math.random()).replace(".","");
 function recPlay(){
 	if(!recBlob){
 		console.log("请先录音，然后停止后再播放");
 		return;
 	};
 
-	var cls=("a"+Math.random()).replace(".","");
+	cls=("a"+Math.random()).replace(".","");
     document.getElementById("ph_span").innerHTML='<span class="'+cls+'"></span>';
 	console.log('播放中: ' + cls);
 	var audio=document.createElement("audio");
@@ -304,11 +390,14 @@ function recPlay(){
 
 /**上传**/
 async function recUpload(id_start, id_stop, id_play, id_upload){
+    document.getElementById("label_say_something").innerHTML = "上传中...";
 	var blob=recBlob;
 	if(!blob){
 		console.log("请先录音，然后停止后再上传");
 		return;
 	};
+
+    document.querySelector("."+cls).innerHTML="";
 
     // 将所有的按钮都不可选用，等待成功后新一组进行翻译
     document.getElementById(id_start).disabled = true;
@@ -355,10 +444,17 @@ async function recUpload(id_start, id_stop, id_play, id_upload){
     let data = await res.json();
     if (data.success) {
         console.log(data)
-        next_sentence = data.next_sentence;
-        next_sentence_file_name = data.next_sentence_file_name
-        document.getElementById("label_translation_text").innerHTML = (n_translations+1) + "、 " + data.next_sentence;
-        document.getElementById("label_count_translations").innerHTML = data.count_translations;
+        if(data.isEnd){
+            document.getElementById(id_start).disabled = true;
+            document.getElementById("label_recording").innerHTML = data.message;
+        }else{
+            which_sentence = data.which_sentence;
+            next_sentence = data.next_sentence;
+            next_sentence_file_name = data.next_sentence_file_name
+            document.getElementById("label_translation_text").innerHTML = (n_translations+1) + "、 " + data.next_sentence;
+            document.getElementById("label_count_translations").innerHTML = data.count_translations;
+            document.getElementById("label_say_something").innerHTML = "谢谢，上传成功，再来一句？";
+        }
     } else {
         document.getElementById("label_translation_text").innerHTML = "出现错误，无法上传服务器";
     }
@@ -368,6 +464,7 @@ async function recUpload(id_start, id_stop, id_play, id_upload){
     document.getElementById(id_stop).disabled = true;
     document.getElementById(id_play).disabled = true;
     document.getElementById(id_upload).disabled = true;
+    document.getElementById("btn_next").disabled = false;
     n_translations += 1;
 };
 
