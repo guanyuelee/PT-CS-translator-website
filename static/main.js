@@ -77,6 +77,25 @@ function showErrorMessage(message, duration = 5) {
     }, duration * 1000);
 }
 
+function display(id){
+    var target = document.getElementById(id);
+    if(target.style.display=="none"){
+        target.style.display="";
+    }else{
+        target.style.display="none";
+    }
+}
+
+var next_sentence = "（测试用，用于熟悉录音界面，提交后正式开始）请翻译：我做你的支持者噢";
+var which_sentence = -1;
+var next_sentence_file_name = "";
+var n_translations=0;
+var rec, recBlob;
+
+// Init
+let translate = document.getElementById("label_translation_text");
+translate.innerHTML=next_sentence;
+
 /**调用open打开录音请求好录音权限**/
 function recOpen(id, id_label){//一般在显示出录音按钮或相关的录音界面时进行此方法调用，后面用户点击开始录音时就能畅通无阻了
 	rec=null;
@@ -103,7 +122,7 @@ function recOpen(id, id_label){//一般在显示出录音按钮或相关的录�
 		console.log((isUserNotAllow?"UserNotAllow，":"") + "打开录音失败："+msg);
         document.getElementById(id).className = "button is-danger";
         document.getElementById(id).innerHTML = "录音权限失败";
-        document.getElementById(id_label).innerHTML = "需要您允许录音功能，请刷新页面重试。";
+        document.getElementById(id_label).innerHTML = "如果您的手机无法开启权限，可以用电脑。";
 	});
 	
 	window.waitDialogClick=function(){
@@ -173,13 +192,14 @@ function recStop(id_start, id_stop, id_play, id_upload){
 };
 
 /**播放**/
+var cls = ("a"+Math.random()).replace(".","");
 function recPlay(){
 	if(!recBlob){
 		console.log("请先录音，然后停止后再播放");
 		return;
 	};
 
-	var cls=("a"+Math.random()).replace(".","");
+	cls=("a"+Math.random()).replace(".","");
     document.getElementById("ph_span").innerHTML='<span class="'+cls+'"></span>';
 	console.log('播放中: ' + cls);
 	var audio=document.createElement("audio");
@@ -196,11 +216,17 @@ function recPlay(){
 
 /**上传**/
 async function recUpload(id_start, id_stop, id_play, id_upload){
+    document.getElementById("label_say_something").innerHTML = "上传中...";
 	var blob=recBlob;
 	if(!blob){
 		console.log("请先录音，然后停止后再上传");
 		return;
 	};
+
+    let cls_inva = document.querySelector("."+cls);
+    if (cls_inva){
+        cls_inva.innerHTML = "";
+    }
 
     // 将所有的按钮都不可选用，等待成功后新一组进行翻译
     document.getElementById(id_start).disabled = true;
@@ -227,7 +253,7 @@ async function recUpload(id_start, id_stop, id_play, id_upload){
     let condition_checkbox = document.getElementById('condition_checkbox');
     if (condition_checkbox.checked) condition = true;
 
-    console.log(gender, region, email, condition);
+    console.log(gender, region, email, condition, next_sentence);
 
     var form=new FormData();
 	form.append("upfile", blob, "recorder.mp3"); //和普通form表单并无二致，后端接收到upfile参数的文件，文件名为recorder.mp3
@@ -238,7 +264,8 @@ async function recUpload(id_start, id_stop, id_play, id_upload){
     form.append("next_sentence", next_sentence);
     form.append("next_sentence_file_name", next_sentence_file_name);
     form.append("n_translations", n_translations);
-    form.append("which_sentence", which_sentence)
+    form.append("which_sentence", which_sentence);
+    form.append("next_is_click", false);
 
     let res = await fetch("/api/upload", {
         method: 'post',
@@ -247,10 +274,94 @@ async function recUpload(id_start, id_stop, id_play, id_upload){
     let data = await res.json();
     if (data.success) {
         console.log(data)
-        next_sentence = data.next_sentence;
-        next_sentence_file_name = data.next_sentence_file_name
-        document.getElementById("label_translation_text").innerHTML = n_translations + "、 " + data.next_sentence;
-        document.getElementById("label_count_translations").innerHTML = data.count_translations;
+        if(data.isEnd){
+            document.getElementById(id_start).disabled = true;
+            document.getElementById("label_recording").innerHTML = data.message;
+        }else{
+            which_sentence = data.which_sentence;
+            next_sentence = data.next_sentence;
+            next_sentence_file_name = data.next_sentence_file_name
+            document.getElementById("label_translation_text").innerHTML = (n_translations+1) + "、 " + data.next_sentence;
+            document.getElementById("label_count_translations").innerHTML = data.count_translations;
+            document.getElementById("label_say_something").innerHTML = "谢谢，上传成功，再来一句？";
+        }
+    } else {
+        document.getElementById("label_translation_text").innerHTML = "出现错误，无法上传服务器";
+    }
+	//...其他表单参数
+    
+    document.getElementById(id_start).disabled = false;
+    document.getElementById(id_stop).disabled = true;
+    document.getElementById(id_play).disabled = true;
+    document.getElementById(id_upload).disabled = true;
+    document.getElementById("btn_next").disabled = false;
+    n_translations += 1;
+};
+
+async function recNext(id_start, id_stop, id_play, id_upload){
+    document.getElementById("label_say_something").innerHTML = "正在换成下一句...";
+	var blob=recBlob;
+	if(!blob){
+		console.log("请先录音，然后停止后再上传");
+		return;
+	};
+
+    let cls_inva = document.querySelector("."+cls);
+    if (cls_inva){
+        cls_inva.innerHTML = "";
+    }
+
+    // 将所有的按钮都不可选用，等待成功后新一组进行翻译
+    document.getElementById(id_start).disabled = true;
+    document.getElementById(id_stop).disabled = true;
+    document.getElementById(id_play).disabled = true;
+    document.getElementById(id_upload).disabled = true;
+
+    let isFemale_ratio = document.getElementById("label_female");
+    gender = "male"
+    if(isFemale_ratio.checked) gender = "female";
+    let which_region = document.getElementById('select_region');
+    var index=which_region.selectedIndex;
+    let region = which_region.options[index].text;
+    let email_input = document.getElementById('email_input');
+    email = "xx@xx";
+    if(email_input.value) email = email_input.value;
+    condition = false;
+    let condition_checkbox = document.getElementById('condition_checkbox');
+    if (condition_checkbox.checked) condition = true;
+
+    console.log(gender, region, email, condition, next_sentence);
+
+    var form=new FormData();
+	form.append("upfile", blob, "recorder.mp3"); //和普通form表单并无二致，后端接收到upfile参数的文件，文件名为recorder.mp3
+    form.append("gender", gender);
+    form.append("region", region);
+    form.append("email", email);
+    form.append("condition", condition);
+    form.append("next_sentence", next_sentence);
+    form.append("next_sentence_file_name", next_sentence_file_name);
+    form.append("n_translations", n_translations);
+    form.append("which_sentence", which_sentence);
+    form.append("next_is_click", true);
+
+    let res = await fetch("/api/upload", {
+        method: 'post',
+        body: form
+    });
+    let data = await res.json();
+    if (data.success) {
+        console.log(data)
+        if(data.isEnd){
+            document.getElementById(id_start).disabled = true;
+            document.getElementById("label_recording").innerHTML = data.message;
+        }else{
+            which_sentence = data.which_sentence;
+            next_sentence = data.next_sentence;
+            next_sentence_file_name = data.next_sentence_file_name
+            document.getElementById("label_translation_text").innerHTML = (n_translations+1) + "、 " + data.next_sentence;
+            document.getElementById("label_count_translations").innerHTML = data.count_translations;
+            document.getElementById("label_say_something").innerHTML = "试试这一句";
+        }
     } else {
         document.getElementById("label_translation_text").innerHTML = "出现错误，无法上传服务器";
     }

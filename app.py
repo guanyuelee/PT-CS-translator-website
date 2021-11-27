@@ -96,8 +96,10 @@ def upload():
     
     try:
         # save data
-        is_next = True if request.form["which_sentence"] else False
-        if not is_next:
+        connection = sqlite.connect(DATABASE_FILE)
+        cursor = connection.cursor()
+        is_next = True if request.form['next_is_click'] else False
+        if is_next:
             gender = request.form["gender"]
             n_translations = int(request.form["n_translations"])  # The order of sentence that user translates. 
             region = request.form['region']
@@ -106,9 +108,6 @@ def upload():
             next_sentence = request.form["next_sentence"]
             next_sentence_file_name = request.form["next_sentence_file_name"]
             which_sentence = int(request.form["which_sentence"])
-            
-            connection = sqlite.connect(DATABASE_FILE)
-            cursor = connection.cursor()
             
             if n_translations != 0:
                 print(n_translations)
